@@ -314,7 +314,6 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         expanded_initial_target_mask = scipy.ndimage.binary_dilation(initial_target_mask, structure=scipy.ndimage.generate_binary_structure(2, 1), iterations=3).astype(initial_target_mask.dtype)
         
         #expanded_initial_target_mask = (scipy.ndimage.gaussian_filter(expanded_initial_target_mask, sigma=sigma)> 0.0).astype(initial_target_mask.dtype) # sigma=4 or 6
-        
     
         labels = {"GTV": initial_target_mask}
         d98_original = calculate_d_x(calculate_dvh_for_labels(expanded_initial_target_mask, labels), [2, 98]).loc[0, 'D98']
@@ -479,32 +478,16 @@ def main():
     metrics["results"] = run_prediction_processing(fn=process_with_error, predictions=predictions)
 
     # Loading time estimation
-    # We want to rank the algorithms based on the runtime of the algorithm
-    # However, in a clinical setting, the loading time of the model is not relevant
-    # Therefore, we exclude the loading time of the model
-    # This loading time is gathered from the runtime of the algorithm for a specific small example case
-
-    
-    # Compute the base runtime of the algorithm from an short example run
-    #RUNTIME_ESTIMATION_CASE_ID = "AUMC_0001.mha" # TODO update this to the correct input file
-    #for job in predictions:
-    #    for input in job["inputs"]:
-    #        if input["interface"]["slug"] == "mri-linac-series":
-    #            input_location = input["image"]["name"]
-    #            if input_location == RUNTIME_ESTIMATION_CASE_ID: 
-    #                # we have found the runtime estimation input
-    #                runtime_estimation_job = job
-    #                break
-    #loading_time = extract_runtime(runtime_estimation_job)
-    loading_time = 5 # TODO remove hardcodeded value
-
-    # An alternative way to compute the loading time is a linear regression model
+    # We want to rank the algorithms based on the runtime of the algorithm.
+    # However, in a clinical setting, the loading time of the model is not relevant.
+    # Therefore, we exclude the loading time of the model.
+    # One way to compute the loading time and time per frame is a linear regression model
     frame_counts = [case_metrics["frame_count"] for case_metrics in metrics["results"]]
     runtimes = [case_metrics["total_runtime"] for case_metrics in metrics["results"]]
     time_per_frame, loading_time = np.polyfit(frame_counts, runtimes, 1) 
 
     # We have the results per prediction, we can aggregate over the results and
-    # generate an overall score(s) for this submission
+    # generate an overall score(s) for this submission.
     metrics["aggregates"] = {
         # geometric
         "dice_similarity_coefficient": mean(result["dice_similarity_coefficient"] for result in metrics["results"]), # Dice similarity coefficient
@@ -516,11 +499,12 @@ def main():
         "dose_error": mean(result["dose_error"] for result in metrics["results"]), # Shifted point cloud approach
         
         # runtime
-        "runtime": mean(result["total_runtime"] - loading_time for result in metrics["results"]), # lets see how to compute this
+        "runtime": mean(result["total_runtime"] - loading_time for result in metrics["results"]), # mean runtime without loading time
 
         # other metadata which might be interesting for the evaluation
         "loading_time": loading_time,
         "time_per_frame": time_per_frame,
+        "total_time" : sum(result["total_runtime"] for result in metrics["results"]) # total time for all predictions
     }
 
     # Make sure to save the metrics

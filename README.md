@@ -1,31 +1,49 @@
-# trackrad2025
+# TrackRAD2025
 
-This repository is currently a placeholder. It will contain information and the evaluation code for the [trackrad 2025 challenge](trackrad2025.grand-challenge.org).
+> This repository, the website and the possibility to participate is still under construction and will be released on February 15th, 2025.
+
+![screenshot](images/header.jpeg)
+
+## Contents
+
+This repository contains:
+
+- A **baseline algorithm** (`baseline-algorithm/`) to the trackRad challenge as a starting point.
+- An example **datasets** (`dataset/`), following the format of the labeled trackrad dataset as well as a recommended folder structure for the trackrad datasets.
+- The **evaluation** code (`evaluation/`) used for evaluating submissions, including a compact and fast custom implementation of the metrics.
+- A [**testing-script**](test-algorithm.sh) (`test-algorithm.sh`) allowing for a local evaluation and testing.
+- The content of the TrackRAD2025 website on [grand-challenge.org](trackrad2025.grand-challenge.org).
+- A number of miscellaneous **scripts** (`scripts/`) and **images/assets** (`images/`)
+
 
 ## Timeline
 
+This final time
 
-## Repository contents
+## 🎯 Background
 
-This repository contains 
+The use of magnetic resonance imaging (MRI) to visualize and characterize motion is becoming increasingly important in the treatment of cancer patients, especially in radiotherapy. For tumors affected by respiratory motion, motion management is crucial to ensure a high radiation dose to the tumor while sparing neighboring organs. The recent development of MRI-guided radiotherapy, based on hybrid MRI-linear accelerator (linac) systems \[[Keall et al., 2022](https://www.nature.com/articles/s41571-022-00631-3)\], called MRI-linacs, offers the possibility to adapt to changes in tumor position during treatment. 2D cine-MRI (a time-resolved sequence of 2D images continuously acquired a the same location) allows real-time tumor motion visualization and allows closely following the tumor with the radiation beam but requires tumor segmentation on all time-resolved frames. This needs to be done in real-time, with high accuracy and robustness to ensure the sparing of critical organs. Currently, clinically available solutions rely on conventional deformable image registration (DIR) to propagate contours from a labeled frame or on template matching and struggle with large non-rigid motion. This limits treatment to beam gating, where the beam is turned off for large motion. 
 
-```sh
-baseline-algorithm/ # An baseline algorithm not 
-dataset/ # folder to store the dataset in.
-scripts/ # a collection of usefull scripts and notbooks
-pages/ # A copy of the pages present on trackrad2025.grand-challenge.org
-evaluation/ # The code used to evaluate the predictions of submissions
-```
+The fast inference of artificial intelligence (AI) methods, obtained by shifting computation time to the training phase, is promising for this task \[[Lombardo et al., 2024](https://www.thegreenjournal.com/article/S0167-8140(23)89864-4/abstract)\].
 
-## Data
+TrackRAD2025 will impact the field of MRI-guided radiotherapy by providing cine-MRI data from multiple MRI-linac institutions to test competitive real-time tumor tracking methods based on a unified platform for comparison.
 
-The datasets provided for the trackrad 2025 challenge can be found on Zenodo. 
 
-DATASET WITH DOI
+
+## Dataset
+
+TrackRAD2025 provides a public multi-institutional datasets of both unlabeled and labeled 2D cine-MRI frame sequences for development and testing. Six international centers (3 Dutch, 1 German, 1 Australian, and 1 Chinese) provided data from 0.35 T and 1.5 T MRI-linacs. A further (private) labeled dataset was collected for testing and evaluation.
+
+The public datasets provided for the trackrad 2025 challenge can be found here:
+
+- [Labeled Dataset](https://zenodo.org/records/14808346)
+- Unlabeled dataset will be available by the begining of he challenge
 
 The format is documented in the dataset paper
 
-and on the [Data page on grand-challenge](https://trackrad2025.grand-challenge.org/data/).
+> To be published
+
+and on the [Data page](https://trackrad2025.grand-challenge.org/data/) on grand-challenge.
 
 To download the datasets and place them in the expected locations, you can run the following commands:
 
@@ -39,6 +57,7 @@ wget TODO
 wget TODO
 ```
 
+We recommend placing the dateset in the `dataset/` subfolder of this repository, following the following structure:
 
 ```sh
 dataset/
@@ -57,7 +76,7 @@ dataset/
 ├── preliminary # private - cases used for the first phase
 └── testing # private - cases used for the final phase
 ```
- 
+
 ## Getting started
 
 Follow these steps (also availabel [here](https://trackrad2025.grand-challenge.org/task/) and [here](https://github.com/LMUK-RADONC-PHYS-RES/trackrad2025/blob/main/pages/Task.md)) to set up your development environment and prepare your submission.
@@ -179,6 +198,18 @@ Have fun developing and contributing the the future of cine-MRI target tracking!
 
 P.S.: When you are ready to test your submission on grand-challenge or submit your final version, go to the [Submission Instructions](https://trackrad2025.grand-challenge.org/submission-instructions/).
 
-## License
 
-All the source 
+## Evaluation
+
+Submitted algorithms will be evaluated based on their ability to reproduce ground truth segmentation labels on the test set, using the following metrics:
+
+- Dice similarity coefficient
+- 95th percentile of the surface distance distribution
+- Average surface distance
+- Euclidian 2D center-of-mass distance
+- Dosimetric accuracy under simulated MLC tracking
+- Speed of inference/runtime
+
+A detailed description of these metrics and the ranking process can be found [here](https://trackrad2025.grand-challenge.org/metrics/) or [here](pages/Metrics.md).
+
+The metrics are implemented [here](evaluation/evaluate.py).
