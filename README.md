@@ -219,3 +219,16 @@ Submitted algorithms will be evaluated based on their ability to reproduce groun
 A detailed description of these metrics and the ranking process can be found [here](https://trackrad2025.grand-challenge.org/metrics/) or [here](pages/Metrics.md).
 
 The metrics are implemented [here](evaluation/evaluate.py).
+
+## License
+
+This license only applies to the Software contained in this repository. 
+All other materials made available in the context of the TrackRAD2025 competition may be licensed under different terms.
+
+Copyright 2025 The TrackRAD2025 organizers
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
