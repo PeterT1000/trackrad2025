@@ -133,14 +133,14 @@ def run_algorithm(frames: np.ndarray,
 
     Args:
     - frames (numpy.ndarray): A 3D numpy array of shape (W, H, T) containing the MRI linac series.
-    - target (numpy.ndarray): A 2D numpy array of shape (W, H) containing the MRI linac target.
+    - target (numpy.ndarray): A 2D numpy array of shape (W, H, 1) containing the MRI linac target.
     - frame_rate (float): The frame rate of the MRI linac series.
     - magnetic_field_strength (float): The magnetic field strength of the MRI linac series.
     - scanned_region (str): The scanned region of the MRI linac series.
     """
     
     # frames.shape == (W, H, T)
-    # target.shape == (W, H)
+    # target.shape == (W, H, 1)
 
     # For the example we want to repeat the initial segmentation for every frame 
     repeated_target = np.repeat(target, frames.shape[2], axis=-1)
@@ -184,7 +184,7 @@ Edit the model.py file in your working copy to implement your algorithm. Make su
 
 ```python
 def run_algorithm(frames: np.ndarray, # frames.shape == (W, H, T)
-    target: np.ndarray, # target.shape == (W, H)
+    target: np.ndarray, # target.shape == (W, H, 1)
     frame_rate: float, 
     magnetic_field_strength: float, 
     scanned_region: str) -> np.ndarray:
