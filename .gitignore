@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Packaged docker containers
+baseline-algoritm/*.tar.gz
+evaluation/*.tar.gz
+
+# ignore the notebook for uploading the dataset as it contains the API key
+scripts/upload_dataset.ipynb
