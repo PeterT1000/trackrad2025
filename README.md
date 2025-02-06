@@ -16,19 +16,25 @@ This repository contains:
 - A number of miscellaneous **scripts** (`scripts/`) and **images/assets** (`images/`)
 
 
-## Timeline
+## (Preliminary) Timeline
 
-This final time
+- Challenge website open: 15/12/2024
+- Release training cases: 15/03/2025
+- Start of challenge - Training phase: 15/03/2025 - 15/08/2025
+- Preliminary testing phase (10 submissions per team): 01/06/2025 - 15/08/2025
+- Advertisement of the challenge at ESTRO 2025: 04/05/2025
+- Testing phase (2 submissions per team): 16/07/2023 - 15/08/2023
+- Deadline for algorithm information form and LNCS format algorithm description: 01/09/2025
+- Announcements and invitation to present: 09/09/2025
+- Post-challenge phase: submission possible for a couple of years
 
 ## 🎯 Background
 
-The use of magnetic resonance imaging (MRI) to visualize and characterize motion is becoming increasingly important in the treatment of cancer patients, especially in radiotherapy. For tumors affected by respiratory motion, motion management is crucial to ensure a high radiation dose to the tumor while sparing neighboring organs. The recent development of MRI-guided radiotherapy, based on hybrid MRI-linear accelerator (linac) systems \[[Keall et al., 2022](https://www.nature.com/articles/s41571-022-00631-3)\], called MRI-linacs, offers the possibility to adapt to changes in tumor position during treatment. 2D cine-MRI (a time-resolved sequence of 2D images continuously acquired a the same location) allows real-time tumor motion visualization and allows closely following the tumor with the radiation beam but requires tumor segmentation on all time-resolved frames. This needs to be done in real-time, with high accuracy and robustness to ensure the sparing of critical organs. Currently, clinically available solutions rely on conventional deformable image registration (DIR) to propagate contours from a labeled frame or on template matching and struggle with large non-rigid motion. This limits treatment to beam gating, where the beam is turned off for large motion. 
+The use of magnetic resonance imaging (MRI) to visualize and characterize motion is becoming increasingly important in the treatment of cancer patients, especially in radiotherapy. For tumors affected by it, motion management is crucial to ensure a high radiation dose to the tumor while sparing neighboring organs. The recent development of MRI-guided radiotherapy with hybrid MRI-linear accelerator (linac) systems \[[Keall et al., 2022](https://www.nature.com/articles/s41571-022-00631-3)\], called MRI-linacs, offers the possibility to adapt to changes in tumor position during treatment. 2D cine-MRI (a time-resolved sequence of 2D images continuously acquired a the same location) allows real-time tumor motion visualization and closely following the tumor with the radiation beam, but requires automated tumor segmentation/tracking. This needs to be done in real-time, with high accuracy and robustness. Currently, clinically available solutions rely on conventional deformable image registration (DIR) or on template matching. These methods struggle with large non-rigid motion, limiting application to beam gating.
 
 The fast inference of artificial intelligence (AI) methods, obtained by shifting computation time to the training phase, is promising for this task \[[Lombardo et al., 2024](https://www.thegreenjournal.com/article/S0167-8140(23)89864-4/abstract)\].
 
-TrackRAD2025 will impact the field of MRI-guided radiotherapy by providing cine-MRI data from multiple MRI-linac institutions to test competitive real-time tumor tracking methods based on a unified platform for comparison.
-
-
+TrackRAD2025 aims to advance MRI-guided radiotherapy by providing cine-MRI data from multiple institutions to evaluate real-time tumor tracking methods on a unified platform.
 
 ## Dataset
 
@@ -199,7 +205,7 @@ Have fun developing and contributing the the future of cine-MRI target tracking!
 P.S.: When you are ready to test your submission on grand-challenge or submit your final version, go to the [Submission Instructions](https://trackrad2025.grand-challenge.org/submission-instructions/).
 
 
-## Evaluation
+## 📊 Evaluation
 
 Submitted algorithms will be evaluated based on their ability to reproduce ground truth segmentation labels on the test set, using the following metrics:
 
