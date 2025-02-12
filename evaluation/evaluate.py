@@ -14,7 +14,7 @@ This scripts implements 5 metrics:
 """
 import json
 from glob import glob
-import SimpleITK
+import minimal_mha_simpleitk as SimpleITK
 import os
 import datetime
 from statistics import mean
@@ -399,7 +399,7 @@ def process(job):
     # Fourthly, load the ground truth form the ground truth directory mounted by GC
     ground_truth_image = SimpleITK.ReadImage(GROUND_TRUTH_DIRECTORY / f"{case_id}/targets/{case_id}_labels.mha")
 
-    # Convert the ground truth to a numpy array and transpose it to the correct shape (H,W,T) -> (T,H,W)
+    # Convert the ground truth to a numpy array and transpose it to the correct shape (H,W,T)
     ground_truth = SimpleITK.GetArrayFromImage(ground_truth_image)
     
 

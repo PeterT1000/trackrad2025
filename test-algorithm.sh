@@ -29,9 +29,8 @@ docker volume create trackrad-volume > /dev/null
 echo "=+= Build Algorithm and evaluation containers" 
 
 docker build "$ALGORITHM_DIR" \
-  --quiet \
   --platform=linux/amd64 \
-  --tag "trackrad-algorithm" 2>&1
+  --tag "trackrad-algorithm-$(basename $ALGORITHM_DIR)" 2>&1
 
 docker build "./evaluation" \
   --quiet \
@@ -76,7 +75,7 @@ docker run --rm \
   --volume "$case_path/images/${case_id}_frames.mha":/input/images/mri-linacs/${case_id}.mha:ro \
   --volume "$case_path/targets/${case_id}_first_label.mha":/input/images/mri-linac-target/target.mha:ro \
   --mount type=volume,src=trackrad-volume,dst=/output,volume-subpath=$job_id/output \
-  "trackrad-algorithm"
+  "trackrad-algorithm-$(basename $ALGORITHM_DIR)"
 
 end_time=$(date +"%Y-%m-%dT%H:%M:%S.%6NZ")
 
