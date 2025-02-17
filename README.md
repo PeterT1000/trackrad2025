@@ -1,6 +1,6 @@
 # TrackRAD2025
 
-> This repository, the website and the possibility to participate is still under construction and will be released on February 15th, 2025.
+> This repository, the website, and the possibility to participate is still under construction and will be released on February 15th, 2025.
 
 ![screenshot](images/header.jpeg)
 
@@ -116,6 +116,8 @@ sh test-algorithm.sh
 
 This script will compile, execute, and test the baseline algorithm with the synthetic example scan. 
 
+> This script assumes a unix enviroment with docker installed correctly, for example on macOS or Linux. If you are using Windows, please look into and make use of the Windows Subsystem for Linux (WSL). Or port the script to powershell and create a PR.
+
 Familiarize yourself with the parameters at the top of the script (especially ALGORITHM_DIR and DATASET_DIR). You will need to update these paths when evaluating your own algorithm.
 
 #### 4. Understand the baseline
@@ -219,6 +221,8 @@ Submitted algorithms will be evaluated based on their ability to reproduce groun
 A detailed description of these metrics and the ranking process can be found [here](https://trackrad2025.grand-challenge.org/metrics/) or [here](pages/Metrics.md).
 
 The metrics are implemented [here](evaluation/evaluate.py).
+
+While the metrics will remain as described on the challenge website, the organizers retain the option to change the actual evaluation code to fix bugs or exploits.
 
 ## License
 
