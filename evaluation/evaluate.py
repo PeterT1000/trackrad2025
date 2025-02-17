@@ -310,10 +310,11 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         
         initial_target_mask = y_true[0,0,:,:]
 
-        # add an isotropic 3 pixel margin to the moving seg
+        # add an isotropic 3 pixel/mm margin to the target
         expanded_initial_target_mask = scipy.ndimage.binary_dilation(initial_target_mask, structure=scipy.ndimage.generate_binary_structure(2, 1), iterations=3).astype(initial_target_mask.dtype)
         
-        #expanded_initial_target_mask = (scipy.ndimage.gaussian_filter(expanded_initial_target_mask, sigma=sigma)> 0.0).astype(initial_target_mask.dtype) # sigma=4 or 6
+        # smooth the expanded target mask with a gaussian filter
+        expanded_initial_target_mask = (scipy.ndimage.gaussian_filter(expanded_initial_target_mask, sigma=sigma)> 0.0).astype(initial_target_mask.dtype) # sigma=4 or 6
     
         labels = {"GTV": initial_target_mask}
         d98_original = calculate_d_x(calculate_dvh_for_labels(expanded_initial_target_mask, labels), [2, 98]).loc[0, 'D98']
@@ -331,13 +332,10 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         # divide by number of shifts to normalize dose
         final_shifted_dose /= B
 
-        # Dose diff
-        # dose_diff = final_shifted_dose - expanded_initial_target_mask
-
-        # Compute DVH for final dose
+        # compute DVH for final dose
         d98_final = calculate_d_x(calculate_dvh_for_labels(final_shifted_dose, labels), [2, 98]).loc[0, 'D98']
 
-        # get realtive decrease of d98
+        # get realtive decrease of d98 in percent
         relative_d98_decrease = (d98_original - d98_final) * 100 / d98_original
         return np.array((relative_d98_decrease,))
 
@@ -384,14 +382,25 @@ def process(job):
 
     # Thirdly, retrieve the input file name to match it with your ground truth
     image_name_mri_linac_series = get_image_name(
-            values=job["inputs"],
-            slug="mri-linac-series",
+        values=job["inputs"],
+        slug="mri-linac-series",
     )
     image_name_mri_linac_target = get_image_name(
-            values=job["inputs"],
-            slug="mri-linac-target",
+        values=job["inputs"],
+        slug="mri-linac-target",
     )
 
+    scanned_region = get_interface_value(
+        values=job["inputs"],
+        slug="scanned-region",
+    )
+
+    location_mri_linac_series_targets = get_file_location(
+        job_pk=job["pk"],
+        values=job["outputs"],
+        slug="mri-linac-series-targets",
+    )
+    
     # Extract the case id from the image name
     case_id = os.path.basename(image_name_mri_linac_series).replace(".mha", "")
     print(case_id)
@@ -405,7 +414,7 @@ def process(job):
 
     y_pred = result_mri_linac_series_targets
     y_true = ground_truth
-    
+
     # Transpose the arrays to (T,H,W) format
     y_true = y_true.transpose(2,0,1)
     y_pred = y_pred.transpose(2,0,1)
@@ -413,45 +422,70 @@ def process(job):
     # Check if the shapes match
     assert y_true.shape == y_pred.shape, f"shapes {y_true.shape} and {y_pred.shape} do not match"
 
+    # Check if the prediction is not empty match
+    assert y_pred.sum() != 0, f"prediction is empty"
+
     T, H, W = y_true.shape
 
     # Convert to the shape required by monai (T,C,H,W) where C = 1 is the channel dimension
     y_pred_monai = y_pred.reshape(T,1,H,W)
     y_true_monai = y_true.reshape(T,1,H,W)
 
+    empty_true = y_true_monai.sum(axis=(1,2,3)) == 0
+
+    # Exclude empty true targets
+    y_pred_monai = y_pred_monai[~empty_true]
+    y_true_monai = y_true_monai[~empty_true]
+
+
+    # Exclude empty predictions for geometric metrics
+    empty_pred = y_pred_monai.sum(axis=(1,2,3)) == 0
+    y_pred_monai_non_empty = y_pred_monai[~empty_pred]
+    y_true_monai_non_empty = y_true_monai[~empty_pred]
+
     # Finally, calculate by comparing the ground truth to the actual results
 
     # Dice similarity coefficient
-    dsc = dice_metric(y_pred_monai, y_true_monai).mean().item()
+    dsc = dice_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
     
     # Hausdorff distance 95th percentile
-    surface_distance_95 = surface_distance_95_metric(y_pred_monai, y_true_monai).mean().item()
+    surface_distance_95 = surface_distance_95_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
 
     # Average surface distance
-    surface_distance_average = surface_distance_avg_metric(y_pred_monai, y_true_monai).mean().item()
+    surface_distance_average = surface_distance_avg_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
     
     # 2D center of mass error
-    com_error = center_of_mass_error_metric(y_pred_monai, y_true_monai).mean().item()
+    com_error = center_of_mass_error_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
 
-    # dosimetric metric
-    try:
-        dose_error = dose_error_metric(y_pred_monai, y_true_monai).mean().item()
-    except Exception:
-        # this is a fallback in case the dose error metric fails
-        print(traceback.format_exc())
-        dose_error = 0
+    # Dosimetric metric
+    dose_error = dose_error_metric(y_pred_monai, y_true_monai, sigma=(6 if scanned_region == "lung" else 4))
 
+
+    # Apply penalties for empty predictions
+    # penalty: add zero scores
+    dsc = np.concatenate((dsc.flatten(), np.zeros(empty_pred.sum())))
+    
+    # penalty: add maximal error = half of the image diagonal
+    max_distance = np.sqrt(H**2 + W**2) / 2
+    penalty = np.full(empty_pred.sum(), max_distance)
+    surface_distance_95 = np.concatenate((surface_distance_95.flatten(), penalty))
+    surface_distance_average = np.concatenate((surface_distance_average.flatten(), penalty))
+    com_error = np.concatenate((com_error.flatten(), penalty))
+    
+    # penalty: additional 1% dose error per empty frame
+    dose_error -= 100/T * empty_pred.sum()
+    
     # Extract the runtime of the job for the runtime metric
     runtime = extract_runtime(job)
 
     # Return the metrics
     return {
         "case_id": case_id,
-        "dice_similarity_coefficient": dsc,
-        "surface_distance_95": surface_distance_95,
-        "surface_distance_average": surface_distance_average,
-        "com_error": com_error,
-        "dose_error": dose_error,
+        "dice_similarity_coefficient": dsc.mean().item(),
+        "surface_distance_95": surface_distance_95.mean().item(),
+        "surface_distance_average": surface_distance_average.mean().item(),
+        "com_error": com_error.mean().item(),
+        "dose_error": dose_error.mean().item(),
         "total_runtime": runtime,
         "frame_count": T,
     }
@@ -533,6 +567,14 @@ def get_image_name(*, values, slug):
     for value in values:
         if value["interface"]["slug"] == slug:
             return value["image"]["name"]
+
+    raise RuntimeError(f"Image with interface {slug} not found!")
+
+def get_interface_value(*, values, slug):
+    # This tells us the user-provided name of the input or output image
+    for value in values:
+        if value["interface"]["slug"] == slug:
+            return value["value"]
 
     raise RuntimeError(f"Image with interface {slug} not found!")
 
