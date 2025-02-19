@@ -72,7 +72,7 @@ docker run --rm \
   --volume "$case_path/frame-rate.json":/input/frame-rate.json:ro \
   --volume "$case_path/b-field-strength.json":/input/b-field-strength.json:ro \
   --volume "$case_path/scanned-region.json":/input/scanned-region.json:ro \
-  --volume "$case_path/images/${case_id}_frames.mha":/input/images/mri-linacs/${case_id}.mha:ro \
+  --volume "$case_path/images/${case_id}_frames.mha":/input/images/mri-linacs/${case_id}_frames.mha:ro \
   --volume "$case_path/targets/${case_id}_first_label.mha":/input/images/mri-linac-target/target.mha:ro \
   --mount type=volume,src=trackrad-volume,dst=/output,volume-subpath=$job_id/output \
   "trackrad-algorithm-$(basename $ALGORITHM_DIR)"

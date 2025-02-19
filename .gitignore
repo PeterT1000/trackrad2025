@@ -21,5 +21,14 @@ ipython_config.py
 baseline-algoritm/*.tar.gz
 evaluation/*.tar.gz
 
+# Packaged docker containers from participants
+*-algoritm/*.tar.gz
+
+# Dataset
+dataset/unlabeled/*/
+dataset/labeled/*/
+dataset/preliminary/*/
+dataset/testing/*/
+
 # ignore the notebook for uploading the dataset as it contains the API key
 scripts/upload_dataset.ipynb

@@ -402,7 +402,7 @@ def process(job):
     )
     
     # Extract the case id from the image name
-    case_id = os.path.basename(image_name_mri_linac_series).replace(".mha", "")
+    case_id = os.path.basename(image_name_mri_linac_series).replace(".mha", "").replace("_frames", "")
     print(case_id)
 
     # Fourthly, load the ground truth form the ground truth directory mounted by GC
