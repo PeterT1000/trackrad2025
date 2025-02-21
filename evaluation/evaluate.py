@@ -14,7 +14,7 @@ This scripts implements 5 metrics:
 """
 import json
 from glob import glob
-import minimal_mha_simpleitk as SimpleITK
+
 import os
 import datetime
 from statistics import mean
@@ -27,11 +27,13 @@ import pandas as pd
 import traceback
 from typing import Any, Sequence
 
-# import a custom reimplementation of the monai metrics
+# Import a custom reimplementation of the monai metrics
 import monai_metrics as monai_metrics
-TensorOrList = Sequence[np.ndarray] | np.ndarray
 
-# region Define custom metrics not provided by monai
+# Import a custom reimplementation of SimpleITK for loading mha files
+import minimal_mha_simpleitk as SimpleITK
+
+# region Custom metrics not provided by monai
 
 class EuclideanCenterDistanceMetric(monai_metrics.IterationMetric):
     def __init__(self) -> None:
@@ -50,7 +52,7 @@ class EuclideanCenterDistanceMetric(monai_metrics.IterationMetric):
         # L2 norm of the difference between the predicted and true center of mass
         return np.linalg.norm(true_com_path - pred_com_path, axis=1)
 
-# region dosimetric metrics helper functions
+# region Dosimetric metrics helper functions
 def shift_by_centroid_diff(pred_centroid, true_centroid, true_seg):
     """Shift input segmentation by difference between predicted and true centroids.
 
@@ -63,11 +65,11 @@ def shift_by_centroid_diff(pred_centroid, true_centroid, true_seg):
         arr: shifted binary mask
     """
     
-    # difference in centroids positions for 250 ms forecast
+    # Difference in centroids positions
     delta_centroids_SI = pred_centroid[0][0] - true_centroid[0][0]  
     delta_centroids_AP = pred_centroid[0][1] - true_centroid[0][1] 
     
-    # take last input segmentation and shift it by delta centroids  
+    # Take last input segmentation and shift it by delta centroids  
     shifted_seg = scipy.ndimage.shift(true_seg, 
                                     shift=[delta_centroids_SI, delta_centroids_AP],
                                     order=3, mode='nearest')
@@ -89,7 +91,7 @@ def calculate_dvh(dose_arr, label_arr, bins=1001):
         values (numpy.ndarray): The DVH values
     """
 
-    # check that dose and label array have the same shape
+    # Check that dose and label array have the same shape
     if dose_arr.shape != label_arr.shape:
         raise ValueError("Dose grid size does not match label, please resample!") 
 
@@ -301,7 +303,7 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         A subclass should implement its own computation logic.
         The return value is usually a "batch_first" tensor, or a list of "batch_first" tensors.
         """
-        # filter out empty targets
+        # Filter out empty targets
         empty_targets = np.sum(y_true, axis=(1,2,3)) == 0
         y_pred = y_pred[~empty_targets]
         y_true = y_true[~empty_targets]
@@ -310,11 +312,11 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         
         initial_target_mask = y_true[0,0,:,:]
 
-        # add an isotropic 3 pixel/mm margin to the target
+        # Add an isotropic 3 pixel/mm margin to the target
         expanded_initial_target_mask = scipy.ndimage.binary_dilation(initial_target_mask, structure=scipy.ndimage.generate_binary_structure(2, 1), iterations=3).astype(initial_target_mask.dtype)
         
-        # smooth the expanded target mask with a gaussian filter
-        expanded_initial_target_mask = (scipy.ndimage.gaussian_filter(expanded_initial_target_mask, sigma=sigma)> 0.0).astype(initial_target_mask.dtype) # sigma=4 or 6
+        # Smooth the expanded target mask with a gaussian filter
+        expanded_initial_target_mask = (scipy.ndimage.gaussian_filter(expanded_initial_target_mask.astype(np.float32), sigma=sigma)> 0.25).astype(initial_target_mask.dtype) # sigma=4 or 6
     
         labels = {"GTV": initial_target_mask}
         d98_original = calculate_d_x(calculate_dvh_for_labels(expanded_initial_target_mask, labels), [2, 98]).loc[0, 'D98']
@@ -322,26 +324,26 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         targets_com = np.array([scipy.ndimage.center_of_mass(y_true[i,0,:,:]) for i in range(B)])
         outputs_com = np.array([scipy.ndimage.center_of_mass(y_pred[i,0,:,:]) for i in range(B)])
     
-        # array in which to store final summed up shifted doses for current patient
+        # Store final summed up shifted dose for current patient
         final_shifted_dose = np.zeros(shape=(H,W), dtype=np.float32)
         
         for i in range(B):
-            # shift by centroid difference and sum up current dose to final one
+            # Shift by centroid difference and sum up current dose to final one
             final_shifted_dose += shift_by_centroid_diff(outputs_com[i:i+1], targets_com[i:i+1], expanded_initial_target_mask)
         
-        # divide by number of shifts to normalize dose
+        # Divide by number of shifts to normalize dose
         final_shifted_dose /= B
 
-        # compute DVH for final dose
+        # Compute DVH for final dose
         d98_final = calculate_d_x(calculate_dvh_for_labels(final_shifted_dose, labels), [2, 98]).loc[0, 'D98']
 
-        # get realtive decrease of d98 in percent
+        # Get realtive decrease of d98 in percent
         relative_d98_decrease = (d98_original - d98_final) * 100 / d98_original
         return np.array((relative_d98_decrease,))
 
 #endregion
 
-# Define of the metrics used
+# Create instances of the metrics
 dice_metric = monai_metrics.DiceMetric()
 surface_distance_95_metric = monai_metrics.HausdorffDistanceMetric(percentile=95)
 surface_distance_avg_metric = monai_metrics.SurfaceDistanceMetric()
@@ -354,13 +356,14 @@ def extract_runtime(job):
     started_at = datetime.datetime.fromisoformat(job["started_at"])
     return (completed_at - started_at).total_seconds()
 
-# directories populated by GC
+# Directories populated by GC
 INPUT_DIRECTORY = Path("/input")
 OUTPUT_DIRECTORY = Path("/output")
 
-# use the ground truth directory populated by GC or the local one if it does not exist
+# Use the ground truth directory populated by GC or a local folder if it does not exist
 GROUND_TRUTH_DIRECTORY = Path("/opt/ml/input/data/ground_truth/") if os.path.exists("/opt/ml/input/data/ground_truth/") else Path("ground_truth")
 
+# region Evaluation function
 def process(job):
     """Processes a single algorithm job, looking at the outputs"""
     
@@ -462,18 +465,18 @@ def process(job):
 
 
     # Apply penalties for empty predictions
-    # penalty: add zero scores
+    # Penalty: add zero scores
     dsc = np.concatenate((dsc.flatten(), np.zeros(empty_pred.sum())))
     
-    # penalty: add maximal error = half of the image diagonal
+    # Penalty: add maximal error = half of the image diagonal
     max_distance = np.sqrt(H**2 + W**2) / 2
     penalty = np.full(empty_pred.sum(), max_distance)
     surface_distance_95 = np.concatenate((surface_distance_95.flatten(), penalty))
     surface_distance_average = np.concatenate((surface_distance_average.flatten(), penalty))
     com_error = np.concatenate((com_error.flatten(), penalty))
     
-    # penalty: additional 1% dose error per empty frame
-    dose_error -= 100/T * empty_pred.sum()
+    # Penalty: additional 1% dose error per empty frame
+    dose_error += (100/T) * empty_pred.sum()
     
     # Extract the runtime of the job for the runtime metric
     runtime = extract_runtime(job)
@@ -482,14 +485,27 @@ def process(job):
     return {
         "case_id": case_id,
         "dice_similarity_coefficient": dsc.mean().item(),
+        "std_dice_similarity_coefficient": dsc.std().item(),
+        "min_dice_similarity_coefficient": dsc[1:].min().item(),
+        "max_dice_similarity_coefficient": dsc.max().item(),
         "surface_distance_95": surface_distance_95.mean().item(),
+        "std_surface_distance_95": surface_distance_95.std().item(),
+        "min_surface_distance_95": surface_distance_95[1:].min().item(),
+        "max_surface_distance_95": surface_distance_95.max().item(),
         "surface_distance_average": surface_distance_average.mean().item(),
+        "std_surface_distance_average": surface_distance_average.std().item(),
+        "min_surface_distance_average": surface_distance_average[1:].min().item(),
+        "max_surface_distance_average": surface_distance_average.max().item(),
         "com_error": com_error.mean().item(),
+        "std_com_error": com_error.std().item(),
+        "min_com_error": com_error[1:].min().item(),
+        "max_com_error": com_error.max().item(),
         "dose_error": dose_error.mean().item(),
         "total_runtime": runtime,
         "frame_count": T,
     }
 
+# Helper function to process a job with error handling / printing the stack trace
 def process_with_error(job):
     try:
         return process(job)
@@ -497,7 +513,9 @@ def process_with_error(job):
         import traceback
         traceback.print_exc()
         raise e
+# endregion
 
+# region Main function
 def main():
     print_inputs()
 
@@ -545,8 +563,9 @@ def main():
     write_metrics(metrics=metrics)
 
     return 0
+# endregion
 
-
+# region GC helper functions
 def print_inputs():
     # Just for convenience, in the logs you can then see what files you have to work with
     input_files = [str(x) for x in Path(INPUT_DIRECTORY).rglob("*") if x.is_file()]
@@ -609,6 +628,9 @@ def write_metrics(*, metrics):
     with open(OUTPUT_DIRECTORY / "metrics.json", "w") as f:
         f.write(json.dumps(metrics, indent=4))
 
+# endregion
 
+# region Run the main function
 if __name__ == "__main__":
     raise SystemExit(main())
+# endregion
