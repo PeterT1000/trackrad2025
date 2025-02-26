@@ -109,10 +109,11 @@ class DiceMetric(IterationMetric):
         return dice
        
 class HausdorffDistanceMetric(IterationMetric):
-    def __init__(self, percentile=95, spacing=[1.0, 1.0]) -> None:
+    def __init__(self, percentile=95, spacing=[1.0, 1.0], directed=False) -> None:
         super().__init__()
         self.percentile = percentile
         self.spacing = spacing
+        self.directed = directed
 
     def _compute_tensor(self, y_pred: np.ndarray, y_true: np.ndarray | None = None, **kwargs):
         assert y_true.shape == y_pred.shape, f"y_pred and y_true should have same shapes, got {y_pred.shape} and {y_true.shape}."
@@ -160,6 +161,15 @@ class HausdorffDistanceMetric(IterationMetric):
             # compute the houseforff distance
             distances = distances.astype(np.float32)[edges_pred]
             hd[b, c] = np.quantile(distances, self.percentile / 100)
+
+            # if directed, compute the distance from the other direction and take the maximum
+            if not self.directed:
+                distances2 = scipy_distance_transform_edt(
+                    input=(~edges_pred), 
+                    sampling=self.spacing
+                )
+                distances2 = distances2.astype(np.float32)[edges_gt]
+                hd[b, c] = max(hd[b, c], np.quantile(distances2, self.percentile / 100))
 
         return hd
 
