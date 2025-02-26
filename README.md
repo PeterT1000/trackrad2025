@@ -1,6 +1,6 @@
 # TrackRAD2025
 
-> This repository, the website, and the possibility to participate is still under construction and will be released on February 15th, 2025.
+> This repository, the website, and the possibility to participate are still under construction and will be released on March 15th according to TrackRAD2025's official timeline.
 
 ![screenshot](images/header.jpeg)
 
@@ -8,8 +8,8 @@
 
 This repository contains:
 
-- A **baseline algorithm** (`baseline-algorithm/`) to the trackRad challenge as a starting point.
-- An example **datasets** (`dataset/`), following the format of the labeled trackrad dataset as well as a recommended folder structure for the trackrad datasets.
+- A **baseline algorithm** (`baseline-algorithm/`) to the TrackRAD challenge as a starting point.
+- An example **datasets** (`dataset/`), following the format of the labeled TrackRAD dataset as well as a recommended folder structure for the TrackRAD datasets.
 - The **evaluation** code (`evaluation/`) used for evaluating submissions, including a compact and fast custom implementation of the metrics.
 - A [**testing-script**](test-algorithm.sh) (`test-algorithm.sh`) allowing for a local evaluation and testing.
 - The content of the TrackRAD2025 website on [grand-challenge.org](trackrad2025.grand-challenge.org).
@@ -23,14 +23,14 @@ This repository contains:
 - Start of challenge - Training phase: 15/03/2025 - 15/08/2025
 - Preliminary testing phase (10 submissions per team): 01/06/2025 - 15/08/2025
 - Advertisement of the challenge at ESTRO 2025: 04/05/2025
-- Testing phase (2 submissions per team): 16/07/2023 - 15/08/2023
+- Testing phase (2 submissions per team): 16/07/2025 - 15/08/2025
 - Deadline for algorithm information form and LNCS format algorithm description: 01/09/2025
 - Announcements and invitation to present: 09/09/2025
 - Post-challenge phase: submission possible for a couple of years
 
 ## 🎯 Background
 
-The use of magnetic resonance imaging (MRI) to visualize and characterize motion is becoming increasingly important in the treatment of cancer patients, especially in radiotherapy. For tumors affected by it, motion management is crucial to ensure a high radiation dose to the tumor while sparing neighboring organs. The recent development of MRI-guided radiotherapy with hybrid MRI-linear accelerator (linac) systems \[[Keall et al., 2022](https://www.nature.com/articles/s41571-022-00631-3)\], called MRI-linacs, offers the possibility to adapt to changes in tumor position during treatment. 2D cine-MRI (a time-resolved sequence of 2D images continuously acquired a the same location) allows real-time tumor motion visualization and closely following the tumor with the radiation beam, but requires automated tumor segmentation/tracking. This needs to be done in real-time, with high accuracy and robustness. Currently, clinically available solutions rely on conventional deformable image registration (DIR) or on template matching. These methods struggle with large non-rigid motion, limiting application to beam gating.
+The use of magnetic resonance imaging (MRI) to visualize and characterize motion is becoming increasingly important in the treatment of cancer patients, especially in radiotherapy. For tumors affected by it, motion management is crucial to ensure a high radiation dose to the tumor while sparing neighboring organs. The recent development of MRI-guided radiotherapy with hybrid MRI-linear accelerator (linac) systems \[[Keall et al., 2022](https://www.nature.com/articles/s41571-022-00631-3)\], called MRI-linacs, offers the possibility to adapt to changes in tumor position during treatment. 2D cine-MRI (a time-resolved sequence of 2D images continuously acquired at the same location) allows real-time tumor motion visualization and closely following the tumor with the radiation beam, but requires automated tumor segmentation/tracking. This needs to be done in real-time, with high accuracy and robustness. Currently, clinically available solutions rely on conventional deformable image registration (DIR) or on template matching. These methods struggle with large non-rigid motion, limiting application to beam gating.
 
 The fast inference of artificial intelligence (AI) methods, obtained by shifting computation time to the training phase, is promising for this task \[[Lombardo et al., 2024](https://www.thegreenjournal.com/article/S0167-8140(23)89864-4/abstract)\].
 
@@ -40,10 +40,21 @@ TrackRAD2025 aims to advance MRI-guided radiotherapy by providing cine-MRI data 
 
 TrackRAD2025 provides a public multi-institutional datasets of both unlabeled and labeled 2D cine-MRI frame sequences for development and testing. Six international centers (3 Dutch, 1 German, 1 Australian, and 1 Chinese) provided data from 0.35 T and 1.5 T MRI-linacs. A further (private) labeled dataset was collected for testing and evaluation.
 
-The public datasets provided for the trackrad 2025 challenge can be found here:
+The public datasets provided for the TrackRAD2025 challenge can be found on [Hugging Face](https://huggingface.co/datasets/LMUK-RADONC-PHYS-RES/TrackRAD2025):
 
-- [Labeled Dataset](https://zenodo.org/records/14808346)
-- Unlabeled dataset will be available by the begining of he challenge
+```
+@misc {lmu_adaptive_radiation_therapy_lab_2025,
+	author       = { {LMU Adaptive Radiation Therapy Lab} },
+	title        = { TrackRAD2025 (Revision 505ec64) },
+	year         = 2025,
+	url          = { https://huggingface.co/datasets/LMUK-RADONC-PHYS-RES/TrackRAD2025 },
+	doi          = { 10.57967/hf/4539 },
+	publisher    = { Hugging Face }
+}
+```
+
+- The labeled dataset is already available.
+- Unlabeled dataset will be available by the beginning of the challenge
 
 The format is documented in the dataset paper
 
@@ -53,17 +64,17 @@ and on the [Data page](https://trackrad2025.grand-challenge.org/data/) on grand-
 
 To download the datasets and place them in the expected locations, you can run the following commands:
 
-
 ```sh
 # Labeled dataset (about 3 GiB) for unsupervised learning or evaluation
 
 wget TODO
+
 #Unlabeled dataset (about X GiB) for unsupervised learning:
 
 wget TODO
 ```
 
-We recommend placing the dateset in the `dataset/` subfolder of this repository, following the following structure:
+We recommend placing the dataset in the `dataset/` subfolder of this repository, following the following structure:
 
 ```sh
 dataset/
@@ -85,10 +96,10 @@ dataset/
 
 ## Getting started
 
-Follow these steps (also availabel [here](https://trackrad2025.grand-challenge.org/task/) and [here](https://github.com/LMUK-RADONC-PHYS-RES/trackrad2025/blob/main/pages/Task.md)) to set up your development environment and prepare your submission.
+Follow these steps (also available [here](https://trackrad2025.grand-challenge.org/task/) and [here](https://github.com/LMUK-RADONC-PHYS-RES/trackrad2025/blob/main/pages/Task.md)) to set up your development environment and prepare your submission.
 
 #### 1. Clone the Official Repository
-Begin by cloning the official [trackrad2025 repository](https://github.com/LMUK-RADONC-PHYS-RES/trackrad2025):
+Begin by cloning the official [TrackRAD2025 repository](https://github.com/LMUK-RADONC-PHYS-RES/trackrad2025):
 
 ```bash
 git clone git@github.com:LMUK-RADONC-PHYS-RES/trackrad2025.git
@@ -102,7 +113,7 @@ This repository includes:
 
 #### 2. Download and Place the Dataset
 
-Download the [dataset](https://trackrad2025.grand-challenge.org/data/) from Zenodo and place it in the dataset/ folder. Use the labeled dataset for supervised training and model evaluation. For unsupervised training you may want to use the unlabeled dataset, for supervised training and evaluation of your model the labeled dataset is sufficient.
+Download the [dataset](https://trackrad2025.grand-challenge.org/data/) and place it in the dataset/ folder. Use the labeled dataset for supervised training and model evaluation. For unsupervised training you may want to use the unlabeled dataset, for supervised training and evaluation of your model the labeled dataset is sufficient.
 
  
 > Tip: A synthetic sequence (formatted like the labeled data) is also provided in the repository to help you get started quickly, even while still downloading the dataset.
@@ -116,7 +127,7 @@ sh test-algorithm.sh
 
 This script will compile, execute, and test the baseline algorithm with the synthetic example scan. 
 
-> This script assumes a unix enviroment with docker installed correctly, for example on macOS or Linux. If you are using Windows, please look into and make use of the Windows Subsystem for Linux (WSL). Or port the script to powershell and create a PR.
+> This script assumes a unix environment with docker installed correctly, for example on macOS or Linux. If you are using Windows, please look into and make use of the Windows Subsystem for Linux (WSL). Or port the script to PowerShell and create a PR.
 
 Familiarize yourself with the parameters at the top of the script (especially ALGORITHM_DIR and DATASET_DIR). You will need to update these paths when evaluating your own algorithm.
 
@@ -173,7 +184,7 @@ Modify the test-algorithm.sh script in the main repository to point to your new 
 ALGORITHM_DIR="./your-algorithm"
 ```
 
-> Tip: By this time your download of the labeled dataset could be done and you could also update the dataset path, to use the labeled dataset. If you don't just want to verify that your algorithm works on a technical level, that is. 
+> Tip: By this time your download of the labeled dataset could be done and you could also update the dataset path, to use the labeled dataset. This is recommended if you want to test more than just the technical functionality of your algorithm.
  
 ```bash
 # This might also be a good time to 
@@ -197,8 +208,8 @@ def run_algorithm(frames: np.ndarray, # frames.shape == (W, H, T)
     return repeated_target # repeated_target.shape == (W, H, T)
 ```
 
-**Note:** When adding files or folders to it make sure to add them the the Dockerfile. This is required for the submission on grand-challenge, where you provide the platform access to github repository you created earlier. Alternatively, but not recommended, you can upload a container image, e.g. created using the save.sh script provided with the baseline algorithm. 
-**However, we still require read access to your model source code for price eligibility.**
+**Note:** When adding files or folders to it make sure to add them to the Dockerfile. This is required for the submission on grand-challenge, where you provide the platform access to github repository you created earlier. Alternatively, but not recommended, you can upload a container image, e.g. created using the save.sh script provided with the baseline algorithm. 
+**However, we still require read access to your model source code for prize eligibility.**
 
 #### 7. Have Fun
 
