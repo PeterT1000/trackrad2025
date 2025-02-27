@@ -125,7 +125,7 @@ class HausdorffDistanceMetric(IterationMetric):
         for b, c in np.ndindex(B, C):
             seg_pred, seg_gt = y_pred[b, c], y_true[b, c]
             
-            seg_union = seg_pred | seg_gt
+            seg_union = np.logical_or(seg_pred,seg_gt)
             if not seg_union.any(): # not seg_pred.any() or not seg_gt.any():
                 hd[b, c] = np.nan
                 continue
@@ -145,9 +145,9 @@ class HausdorffDistanceMetric(IterationMetric):
             seg_pred, seg_gt = seg_pred[s], seg_gt[s]
             
             # compute the edges of the segmentations
-            edges_pred = binary_erosion(seg_pred) ^ seg_pred
-            edges_gt = binary_erosion(seg_gt) ^ seg_gt
-            
+            edges_pred = np.logical_xor(binary_erosion(seg_pred), seg_pred)
+            edges_gt = np.logical_xor(binary_erosion(seg_gt), seg_gt)
+
             # if no edges are present, the distance is infinite
             if not edges_gt.any() or not edges_pred.any():
                 hd[b, c] = np.inf
@@ -188,7 +188,7 @@ class SurfaceDistanceMetric(IterationMetric):
         for b, c in np.ndindex(B, C):
             seg_pred, seg_gt = y_pred[b, c], y_true[b, c]
             
-            seg_union = seg_pred | seg_gt
+            seg_union = np.logical_or(seg_pred,seg_gt)
             if not seg_union.any(): # not seg_pred.any() or not seg_gt.any():
                 asd[b, c] = np.nan
                 continue
@@ -207,8 +207,8 @@ class SurfaceDistanceMetric(IterationMetric):
             seg_pred, seg_gt = seg_pred[s], seg_gt[s]
             
             # compute the edges of the segmentations
-            edges_pred = binary_erosion(seg_pred) ^ seg_pred
-            edges_gt = binary_erosion(seg_gt) ^ seg_gt
+            edges_pred = np.logical_xor(binary_erosion(seg_pred), seg_pred)
+            edges_gt = np.logical_xor(binary_erosion(seg_gt), seg_gt)
             
             # if no edges are present, the distance is infinite
             if not edges_gt.any() or not edges_pred.any():

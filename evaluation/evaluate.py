@@ -468,36 +468,36 @@ def process(job):
     # Penalty: add zero scores
     dsc = np.concatenate((dsc.flatten(), np.zeros(empty_pred.sum())))
     
-    # Penalty: add maximal error = half of the image diagonal
-    max_distance = np.sqrt(H**2 + W**2) / 2
+    # Penalty: add maximum error = image size
+    max_distance = mean([H,W])
     penalty = np.full(empty_pred.sum(), max_distance)
     surface_distance_95 = np.concatenate((surface_distance_95.flatten(), penalty))
     surface_distance_average = np.concatenate((surface_distance_average.flatten(), penalty))
     com_error = np.concatenate((com_error.flatten(), penalty))
     
-    # Penalty: additional 1% dose error per empty frame
-    dose_error += (100/T) * empty_pred.sum()
-    
+    # Penalty: Internalized in metric -> No improvement in dose error for empty predictions
+    # dose_error += 0
+
     # Extract the runtime of the job for the runtime metric
     runtime = extract_runtime(job)
 
     # Return the metrics
     return {
         "case_id": case_id,
-        "dice_similarity_coefficient": dsc.mean().item(),
-        "std_dice_similarity_coefficient": dsc.std().item(),
+        "dice_similarity_coefficient": dsc[1:].mean().item(),
+        "std_dice_similarity_coefficient": dsc[1:].std().item(),
         "min_dice_similarity_coefficient": dsc[1:].min().item(),
         "max_dice_similarity_coefficient": dsc.max().item(),
-        "surface_distance_95": surface_distance_95.mean().item(),
-        "std_surface_distance_95": surface_distance_95.std().item(),
+        "surface_distance_95": surface_distance_95[1:].mean().item(),
+        "std_surface_distance_95": surface_distance_95[1:].std().item(),
         "min_surface_distance_95": surface_distance_95[1:].min().item(),
         "max_surface_distance_95": surface_distance_95.max().item(),
-        "surface_distance_average": surface_distance_average.mean().item(),
-        "std_surface_distance_average": surface_distance_average.std().item(),
+        "surface_distance_average": surface_distance_average[1:].mean().item(),
+        "std_surface_distance_average": surface_distance_average[1:].std().item(),
         "min_surface_distance_average": surface_distance_average[1:].min().item(),
         "max_surface_distance_average": surface_distance_average.max().item(),
-        "com_error": com_error.mean().item(),
-        "std_com_error": com_error.std().item(),
+        "com_error": com_error[1:].mean().item(),
+        "std_com_error": com_error[1:].std().item(),
         "min_com_error": com_error[1:].min().item(),
         "max_com_error": com_error.max().item(),
         "dose_error": dose_error.mean().item(),
