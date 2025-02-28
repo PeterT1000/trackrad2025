@@ -469,7 +469,7 @@ def process(job):
     dsc = np.concatenate((dsc.flatten(), np.zeros(empty_pred.sum())))
     
     # Penalty: add maximum error = image size
-    max_distance = mean([H,W])
+    max_distance = max(H,W)
     penalty = np.full(empty_pred.sum(), max_distance)
     surface_distance_95 = np.concatenate((surface_distance_95.flatten(), penalty))
     surface_distance_average = np.concatenate((surface_distance_average.flatten(), penalty))
