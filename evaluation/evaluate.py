@@ -293,7 +293,7 @@ def calculate_d_cc_x(dvh, x, label=None):
 
 #endregion
 
-class DoseErrorMetric(monai_metrics.IterationMetric):
+class DoseMetric(monai_metrics.IterationMetric):
     def __init__(self) -> None:
         super().__init__()
 
@@ -337,18 +337,18 @@ class DoseErrorMetric(monai_metrics.IterationMetric):
         # Compute DVH for final dose
         d98_final = calculate_d_x(calculate_dvh_for_labels(final_shifted_dose, labels), [2, 98]).loc[0, 'D98']
 
-        # Get realtive decrease of d98 in percent
-        relative_d98_decrease = (d98_original - d98_final) * 100 / d98_original
-        return np.array((relative_d98_decrease,))
+        # Get realtive d98
+        relative_d98_dose = d98_final  / d98_original
+        return np.array((relative_d98_dose,))
 
 #endregion
 
 # Create instances of the metrics
 dice_metric = monai_metrics.DiceMetric()
-surface_distance_95_metric = monai_metrics.HausdorffDistanceMetric(percentile=95)
+hausdorff_distance_95_metric = monai_metrics.HausdorffDistanceMetric(percentile=95)
 surface_distance_avg_metric = monai_metrics.SurfaceDistanceMetric()
-center_of_mass_error_metric = EuclideanCenterDistanceMetric()
-dose_error_metric = DoseErrorMetric()
+center_distance_metric = EuclideanCenterDistanceMetric()
+dose_metric = DoseMetric()
 
 # Helper function to extract the runtime of a job
 def extract_runtime(job):
@@ -452,16 +452,16 @@ def process(job):
     dsc = dice_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
     
     # Hausdorff distance 95th percentile
-    surface_distance_95 = surface_distance_95_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
+    hausdorff_distance_95 = hausdorff_distance_95_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
 
     # Average surface distance
     surface_distance_average = surface_distance_avg_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
     
     # 2D center of mass error
-    com_error = center_of_mass_error_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
+    center_distance = center_distance_metric(y_pred_monai_non_empty, y_true_monai_non_empty)
 
     # Dosimetric metric
-    dose_error = dose_error_metric(y_pred_monai, y_true_monai, sigma=(6 if scanned_region == "lung" else 4))
+    relative_d98_dose = dose_metric(y_pred_monai, y_true_monai, sigma=(6 if scanned_region == "lung" else 4))
 
 
     # Apply penalties for empty predictions
@@ -471,9 +471,9 @@ def process(job):
     # Penalty: add maximum error = image size
     max_distance = max(H,W)
     penalty = np.full(empty_pred.sum(), max_distance)
-    surface_distance_95 = np.concatenate((surface_distance_95.flatten(), penalty))
+    hausdorff_distance_95 = np.concatenate((hausdorff_distance_95.flatten(), penalty))
     surface_distance_average = np.concatenate((surface_distance_average.flatten(), penalty))
-    com_error = np.concatenate((com_error.flatten(), penalty))
+    center_distance = np.concatenate((center_distance.flatten(), penalty))
     
     # Penalty: Internalized in metric -> No improvement in dose error for empty predictions
     # dose_error += 0
@@ -488,19 +488,19 @@ def process(job):
         "std_dice_similarity_coefficient": dsc[1:].std().item(),
         "min_dice_similarity_coefficient": dsc[1:].min().item(),
         "max_dice_similarity_coefficient": dsc.max().item(),
-        "surface_distance_95": surface_distance_95[1:].mean().item(),
-        "std_surface_distance_95": surface_distance_95[1:].std().item(),
-        "min_surface_distance_95": surface_distance_95[1:].min().item(),
-        "max_surface_distance_95": surface_distance_95.max().item(),
+        "hausdorff_distance_95": hausdorff_distance_95[1:].mean().item(),
+        "std_hausdorff_distance_95": hausdorff_distance_95[1:].std().item(),
+        "min_hausdorff_distance_95": hausdorff_distance_95[1:].min().item(),
+        "max_hausdorff_distance_95": hausdorff_distance_95.max().item(),
         "surface_distance_average": surface_distance_average[1:].mean().item(),
         "std_surface_distance_average": surface_distance_average[1:].std().item(),
         "min_surface_distance_average": surface_distance_average[1:].min().item(),
         "max_surface_distance_average": surface_distance_average.max().item(),
-        "com_error": com_error[1:].mean().item(),
-        "std_com_error": com_error[1:].std().item(),
-        "min_com_error": com_error[1:].min().item(),
-        "max_com_error": com_error.max().item(),
-        "dose_error": dose_error.mean().item(),
+        "center_distance": center_distance[1:].mean().item(),
+        "std_center_distance": center_distance[1:].std().item(),
+        "min_center_distance": center_distance[1:].min().item(),
+        "max_center_distance": center_distance.max().item(),
+        "relative_d98_dose": relative_d98_dose.mean().item(),
         "total_runtime": runtime,
         "frame_count": T,
     }
@@ -543,12 +543,12 @@ def main():
     metrics["aggregates"] = {
         # geometric
         "dice_similarity_coefficient": mean(result["dice_similarity_coefficient"] for result in metrics["results"]), # Dice similarity coefficient
-        "surface_distance_95": mean(result["surface_distance_95"] for result in metrics["results"]), # Hausdorff distance 95th percentile
+        "hausdorff_distance_95": mean(result["hausdorff_distance_95"] for result in metrics["results"]), # Hausdorff distance 95th percentile
         "surface_distance_average": mean(result["surface_distance_average"] for result in metrics["results"]), # Average surface distance
-        "com_error": mean(result["com_error"] for result in metrics["results"]), # 2D com error
+        "center_distance": mean(result["center_distance"] for result in metrics["results"]), # 2D com error
         
         # dosimetric
-        "dose_error": mean(result["dose_error"] for result in metrics["results"]), # Shifted point cloud approach
+        "relative_d98_dose": mean(result["relative_d98_dose"] for result in metrics["results"]), # Shifted point cloud approach
         
         # runtime
         "runtime": mean(result["total_runtime"] - loading_time for result in metrics["results"]), # mean runtime without loading time

@@ -30,5 +30,11 @@ dataset/labeled/*/
 dataset/preliminary/*/
 dataset/testing/*/
 
-# ignore the notebook for uploading the dataset as it contains the API key
+# Packaged ground truths
+dataset/*.tar.gz
+
+#  Notebook for uploading the dataset is ignored as it contains the API key
 scripts/upload_dataset.ipynb
+
+# Results are ignored as they are not to be made public until the end of the challenge
+results/

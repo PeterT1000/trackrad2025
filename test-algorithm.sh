@@ -15,16 +15,27 @@ ALGORITHM_DIR="./baseline-algorithm"
 # For initial local testing the provided minimal example dataset can be used
 # For testing prior to submission we recommend to test with the full labeled dataset
 DATASET_DIR="./dataset/example/" # minimal example dataset
-#DATASET_DIR="./dataset/labeled/" # labeled dataset
+
+# override variables if os environment variables are set
+if [ -n "$ALGORITHM_DIR_OVERRIDE" ]; then
+  ALGORITHM_DIR=$ALGORITHM_DIR_OVERRIDE
+fi
+if [ -n "$DATASET_DIR_OVERRIDE" ]; then
+  DATASET_DIR=$DATASET_DIR_OVERRIDE
+fi
 
 # The path to the ground truth for the evaluation 
 # For local testing the full dataset can be used, as the folder structure is the same
 GROUND_TRUTH_PATH=$DATASET_DIR
 
-# create a volume for temporary storage of predictions and metrics
-# remove the volume if it exists
-docker volume rm -f trackrad-volume > /dev/null
-docker volume create trackrad-volume > /dev/null
+# Docker volume for temporary storage of predictions and metrics
+# Use uuidgen to create a unique volume name to avoid conflicts
+TRACKRAD_VOLUME=trackrad-volume-$(uuidgen)
+
+# Create a volume for temporary storage of predictions and metrics
+# Remove the volume if it exists
+docker volume rm -f $TRACKRAD_VOLUME > /dev/null
+docker volume create $TRACKRAD_VOLUME > /dev/null
 
 echo "=+= Build Algorithm and evaluation containers" 
 
@@ -44,14 +55,15 @@ for case_folder in $DATASET_DIR/*; do
 
 job_id=$(uuidgen)
 case_id=$(basename $case_folder)
-# absolute path to the case folder for mounting
+
+# Absolute path to the case folder for mounting
 case_path=$(realpath $case_folder)
 echo "Running algorithm for case: $case_id"
 
 docker run --rm \
     --quiet \
     --env job_id=$job_id \
-    --volume trackrad-volume:/output \
+    --volume $TRACKRAD_VOLUME:/output \
     alpine:latest \
     /bin/sh -c 'mkdir -m 777 -p /output/${job_id}/output'
 
@@ -74,7 +86,7 @@ docker run --rm \
   --volume "$case_path/scanned-region.json":/input/scanned-region.json:ro \
   --volume "$case_path/images/${case_id}_frames.mha":/input/images/mri-linacs/${case_id}_frames.mha:ro \
   --volume "$case_path/targets/${case_id}_first_label.mha":/input/images/mri-linac-target/target.mha:ro \
-  --mount type=volume,src=trackrad-volume,dst=/output,volume-subpath=$job_id/output \
+  --mount type=volume,src=$TRACKRAD_VOLUME,dst=/output,volume-subpath=$job_id/output \
   "trackrad-algorithm-$(basename $ALGORITHM_DIR)"
 
 end_time=$(date +"%Y-%m-%dT%H:%M:%S.%6NZ")
@@ -86,7 +98,7 @@ docker run --rm \
     --env job_id=$job_id \
     --env end_time=$end_time \
     --env start_time=$start_time \
-    --mount type=volume,src=trackrad-volume,dst=/output,volume-subpath=$job_id \
+    --mount type=volume,src=$TRACKRAD_VOLUME,dst=/output,volume-subpath=$job_id \
     alpine:latest \
     /bin/sh -c 'cat > /output/prediction.json << EOF 
 {
@@ -148,16 +160,16 @@ docker run --rm \
 done
 
 # Combine all predictions into a single file
-# bashe merge /output/*/prediction.json files into /output/predictions.json separeted by \n,\n
-# do not use jq because it is not available in the evaluation container
+# Use bash to merge /output/*/prediction.json files into /output/predictions.json separeted by \n,\n
+# Does not use jq because it is not available in the evaluation container
 docker run --rm \
-    --mount type=volume,src=trackrad-volume,dst=/output \
+    --mount type=volume,src=$TRACKRAD_VOLUME,dst=/output \
     alpine:latest \
     /bin/sh -c "echo '[' > /output/predictions.json && \
       find /output/*/prediction.json -exec sh -c 'cat {} && echo \",\"' \; | sed '$ s/,$//' >> /output/predictions.json &&\
       echo ']' >> /output/predictions.json"
 
-# view the current content of the volume for debugging
+# Maybe view the current content of the volume for debugging
 #docker run --rm \
 #    --mount type=volume,src=trackrad-volume,dst=/output \
 #    alpine:latest \
@@ -169,7 +181,7 @@ echo "=+= Running Evaluation"
 docker run --rm \
     --quiet \
     --env job_id=$job_id \
-    --volume trackrad-volume:/output \
+    --volume $TRACKRAD_VOLUME:/output \
     alpine:latest \
     /bin/sh -c 'mkdir -m 777 -p /output/evaluation'
 
@@ -178,8 +190,8 @@ docker run --rm \
     --platform=linux/amd64 \
     --network none \
     --gpus all \
-    --mount type=volume,src=trackrad-volume,dst=/input \
-    --mount type=volume,src=trackrad-volume,dst=/output,volume-subpath=evaluation \
+    --mount type=volume,src=$TRACKRAD_VOLUME,dst=/input \
+    --mount type=volume,src=$TRACKRAD_VOLUME,dst=/output,volume-subpath=evaluation \
     --volume "$GROUND_TRUTH_PATH":/opt/app/ground_truth \
     "trackrad-evaluation"
 
@@ -187,9 +199,9 @@ docker run --rm \
 echo "metrics.json:"
 docker run --rm \
     --quiet \
-    --mount type=volume,src=trackrad-volume,dst=/output \
+    --mount type=volume,src=$TRACKRAD_VOLUME,dst=/output \
     alpine:latest /bin/sh -c 'cat /output/evaluation/metrics.json'
 echo ""
 
 # Delete the volume since it is not needed anymore
-docker volume rm -f trackrad-volume > /dev/null
+docker volume rm -f $TRACKRAD_VOLUME > /dev/null
