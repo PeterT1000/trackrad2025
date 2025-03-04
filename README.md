@@ -13,7 +13,7 @@ This repository contains:
 - The **evaluation** code (`evaluation/`) used for evaluating submissions, including a compact and fast custom implementation of the metrics.
 - A [**testing-script**](test-algorithm.sh) (`test-algorithm.sh`) allowing for a local evaluation and testing.
 - The content of the TrackRAD2025 website on [grand-challenge.org](trackrad2025.grand-challenge.org).
-- A number of miscellaneous **scripts** (`scripts/`) and **images/assets** (`images/`)
+- A number of miscellaneous **scripts** (`scripts/`) including those to convert proprietary cine MRI formats from both vendors into metadata files and **images/assets** (`images/`).
 
 
 ## (Preliminary) Timeline
